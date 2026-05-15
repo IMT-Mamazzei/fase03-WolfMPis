@@ -3,15 +3,13 @@ package br.maua.cic303;
 import java_cup.runtime.*;
 
 parser code {:
-    // Método chamado pelo CUP quando encontra um erro sintático
     public void syntax_error(Symbol cur_token) {
         throw new RuntimeException("Erro Sintático na linha " + cur_token.left + ", coluna " + cur_token.right);
     }
 :}
 
 /* ========================================================================= */
-/* DECLARAÇÃO DOS TOKENS (TERMINAIS)                                         */
-/* O CUP usará isso para gerar o sym.java que o seu Lexer precisa            */
+/* DECLARAÇÃO DOS TOKENS                                                       */
 /* ========================================================================= */
 
 terminal IF, THEN, ELSE, WHILE;
@@ -19,8 +17,11 @@ terminal ASSIGN, LPAREN, RPAREN, LBRACE, RBRACE, SEMI;
 terminal String ID, NUMBER;
 terminal String ADD_OP, MUL_OP, REL_OP;
 
+/* Token falso usado só para resolver o conflito do IF sem ELSE */
+terminal IFX;
+
 /* ========================================================================= */
-/* DECLARAÇÃO DOS NÃO-TERMINAIS (VARIÁVEIS DA GRAMÁTICA)                     */
+/* DECLARAÇÃO DOS NÃO-TERMINAIS                                                */
 /* ========================================================================= */
 
 non terminal program, stmt_list, stmt;
@@ -28,16 +29,20 @@ non terminal assign_stmt, if_stmt, while_stmt, block_stmt, null_stmt;
 non terminal expr;
 
 /* ========================================================================= */
-/* PRECEDÊNCIA E ASSOCIATIVIDADE                                             */
+/* PRECEDÊNCIA E ASSOCIATIVIDADE                                               */
 /* ========================================================================= */
 
-/* O operador declarado mais embaixo tem maior precedência. */
+/* Resolve o conflito do IF/ELSE */
+precedence nonassoc IFX;
+precedence nonassoc ELSE;
+
+/* Precedência das expressões */
 precedence left REL_OP;
 precedence left ADD_OP;
 precedence left MUL_OP;
 
 /* ========================================================================= */
-/* REGRAS DA GRAMÁTICA                                                       */
+/* REGRAS DA GRAMÁTICA                                                         */
 /* ========================================================================= */
 
 start with program;
@@ -57,7 +62,7 @@ stmt ::= assign_stmt
 
 assign_stmt ::= ID ASSIGN expr SEMI ;
 
-if_stmt ::= IF LPAREN expr RPAREN THEN block_stmt
+if_stmt ::= IF LPAREN expr RPAREN THEN block_stmt %prec IFX
           | IF LPAREN expr RPAREN THEN block_stmt ELSE block_stmt
           ;
 
