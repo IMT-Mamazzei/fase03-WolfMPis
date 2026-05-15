@@ -32,8 +32,7 @@ Number = [0-9]+(\.[0-9]+)?([Ee][+-]?[0-9]+)?
 
 Letter = [a-zA-Z]
 Digit  = [0-9]
-Identifier = {Letter}({Letter}|{Digit}|_){0,31}
-OversizedIdentifier = {Letter}({Letter}|{Digit}|_){32,}
+Identifier = {Letter}({Letter}|{Digit}|_)*
 
 %%
 
@@ -55,34 +54,38 @@ OversizedIdentifier = {Letter}({Letter}|{Digit}|_){32,}
     ";"             { return symbol(sym.SEMI); }
 
     /* Operadores relacionais */
-    "==" | "!=" | "<=" | ">=" | "<" | ">" {
-        return symbol(sym.REL_OP, yytext());
-    }
+    "=="            { return symbol(sym.REL_OP, yytext()); }
+    "!="            { return symbol(sym.REL_OP, yytext()); }
+    "<="            { return symbol(sym.REL_OP, yytext()); }
+    ">="            { return symbol(sym.REL_OP, yytext()); }
+    "<"             { return symbol(sym.REL_OP, yytext()); }
+    ">"             { return symbol(sym.REL_OP, yytext()); }
 
     /* Atribuição */
     "="             { return symbol(sym.ASSIGN); }
 
     /* Operadores matemáticos */
-    "+" | "-"       { return symbol(sym.ADD_OP, yytext()); }
-    "*" | "/" | "%" { return symbol(sym.MUL_OP, yytext()); }
+    "+"             { return symbol(sym.ADD_OP, yytext()); }
+    "-"             { return symbol(sym.ADD_OP, yytext()); }
+    "*"             { return symbol(sym.MUL_OP, yytext()); }
+    "/"             { return symbol(sym.MUL_OP, yytext()); }
+    "%"             { return symbol(sym.MUL_OP, yytext()); }
 
-    /* Identificadores e números */
-    {Identifier}    { return symbol(sym.ID, yytext()); }
+    /* Identificadores */
+    {Identifier}    {
+                        if (yytext().length() > 32) {
+                            throw new RuntimeException("Erro Léxico: Identificador gigante -> " + yytext());
+                        }
+                        return symbol(sym.ID, yytext());
+                    }
+
+    /* Números */
     {Number}        { return symbol(sym.NUMBER, yytext()); }
 
-    /* Identificadores grandes demais */
-    {OversizedIdentifier} {
-        throw new RuntimeException("Erro Léxico: Identificador gigante -> " + yytext());
-    }
-
-    . {
-        throw new RuntimeException("Erro Léxico: Caractere Ilegal -> " + yytext());
-    }
+    /* Qualquer outro caractere inválido */
+    .               {
+                        throw new RuntimeException("Erro Léxico: Caractere Ilegal -> " + yytext());
+                    }
 }
 
 <<EOF>>             { return symbol(sym.EOF); }
-    .   {throw new RuntimeException("Erro Léxico: Caractere Ilegal -> " + yytext()); }
-}
-
-/* Regra para o Final do Arquivo */
-<<EOF>>             { return token(Tag.EOF, ""); }
